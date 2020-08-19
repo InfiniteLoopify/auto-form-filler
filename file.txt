@@ -1,0 +1,7 @@
+# <name> <id> <minutes>-<seconds>
+# you can skip minutes/seconds to get the default value of 1 minute
+
+# examples:
+# James 123456 4-26
+# Edward Elric 987654 7
+# Steven Gerrard 457236
