@@ -53,7 +53,7 @@ def fill_form(my_name, their_name, mins, secs):
 
 
 if __name__ == "__main__":
-    my_name = "Umair Shahab 701514"
+    my_name = "Name 123456"
     filename = open("file.txt", "r")
 
     # for every entry in file, fill form
