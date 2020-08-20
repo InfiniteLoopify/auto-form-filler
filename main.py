@@ -177,7 +177,7 @@ def fill_agent_form(my_name, mins, secs, status):
 def fill_form(form_url, values, result):
     # post request of form and check for errors
     try:
-        # response = requests.post(form_url, data=values, timeout=10)
+        response = requests.post(form_url, data=values, timeout=10)
         print(result)
     except Exception as err:
         print(' ***( ERROR: ', err, ') -> ', result)
