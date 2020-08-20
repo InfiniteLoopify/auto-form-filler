@@ -17,13 +17,13 @@ def get_agent_info(words):
     return name, mins, secs
 
 
-def get_info(words):
-    words = [word.lower() for word in words]
-    print(words)
+# def get_info(words):
+#     words = [word.lower() for word in words]
+#     print(words)
 
-    # is_valid = True if any((val.isdecimal() and len(val) == 6)
-    #                        for val in words) and any(val.isalpha()
-    #                                                  for val in words) else False
+#     # is_valid = True if any((val.isdecimal() and len(val) == 6)
+#     #                        for val in words) and any(val.isalpha()
+#     #                                                  for val in words) else False
 
 
 def fill_form(my_name, their_name, mins, secs):
@@ -62,7 +62,7 @@ def fill_form(my_name, their_name, mins, secs):
 
 
 if __name__ == "__main__":
-    my_name = "Umair Shahab 701514"
+    my_name = "abcqwe 123456"
     filename = open("file.txt", "r")
 
     # for every entry in file, fill form
@@ -72,9 +72,9 @@ if __name__ == "__main__":
             is_valid = True if any((val.isdecimal() and len(val) == 6)
                                    for val in words) and any(val.isalpha()
                                                              for val in words) else False
-            get_info(words)
-            # if is_valid:
-            # their_name, mins, secs = get_agent_info(words)
-            # fill_form(my_name, their_name, mins, secs)
-            # else:
-            #     print("Invalid Entry Discarded: ", ' '.join(words))
+            # get_info(words)
+            if is_valid:
+                their_name, mins, secs = get_agent_info(words)
+                fill_form(my_name, their_name, mins, secs)
+            else:
+                print("Invalid Entry Discarded: ", ' '.join(words))
