@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 zameer 601682
 mohib 601471
 zoha 601704
@@ -8,3 +9,12 @@ silent call
 azka 601128
 maaz 601389
 
+=======
+# <name> <id> <minutes>-<seconds>
+# you can skip minutes/seconds to get the default value of 1 minute
+
+# examples:
+# James 123456 4-26
+# Edward Elric 987654 7
+# Steven Gerrard 457236
+>>>>>>> 67a8698a7f76a34888c63244cfabfd7fadaf94df
