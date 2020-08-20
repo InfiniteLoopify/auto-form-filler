@@ -1,0 +1,15 @@
+# <status> <min>-<sec> <count> 
+# you can skip minutes/seconds to get the default value of 1 minute
+# you can skip count to get the default value of 1 time repeat
+
+# EXAMPLES:
+# successful 5-12 x4
+# successful 5 x5
+# successful 5 
+# successful x5
+# successful
+# state error 5-12 x4
+# state error 5 x5
+# state error 5 
+# state error x5
+# state error

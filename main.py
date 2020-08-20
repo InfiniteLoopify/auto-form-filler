@@ -10,7 +10,27 @@ def get_count(line):
     return count
 
 
-def extract_info(line):
+def get_time(line):
+    # mins and seconds given
+    if re.search(r" +\d{1,2}[\-]\d{1,2} +", line):
+        time = re.findall(r" +\d{1,2}[\-]\d{1,2} +", line)[0].split('-')
+        mins = int(time[0])
+        secs = int(time[1])
+
+    # only mins given
+    elif re.search(r" +\d{1,2} +", line):
+        mins = int(re.findall(r" +\d{1,2} +", line)[0])
+        secs = 0
+
+    # time (min/sec) not given. defaults to 1 second
+    else:
+        mins = 1
+        secs = 0
+
+    return mins, secs
+
+
+def extract_caller_info(line):
     # words = [word.lower() for word in words]
     name = "-"
     mins = 1
@@ -40,22 +60,7 @@ def extract_info(line):
         name = " ".join(name)
         agent_id = str(int(re.findall(r" +\d{6} *", line)[0]))
         name = name + " " + agent_id
-
-        # mins and seconds given
-        if re.search(r" +\d{1,2}[\-]\d{1,2} +", line):
-            time = re.findall(r" +\d{1,2}[\-]\d{1,2} +", line)[0].split('-')
-            mins = int(time[0])
-            secs = int(time[1])
-
-        # only mins given
-        elif re.search(r" +\d{1,2} +", line):
-            mins = int(re.findall(r" +\d{1,2} +", line)[0])
-            secs = 0
-
-        # time (min/sec) not given. defaults to 1 second
-        else:
-            mins = 1
-            secs = 0
+        mins, secs = get_time(line)
 
     # invalid data entry.
     else:
@@ -64,7 +69,32 @@ def extract_info(line):
     return name, mins, secs, count, status
 
 
-def fill_form(my_name, their_name, mins, secs, status):
+def extract_agent_info(line):
+    status = -1
+    mins = 1
+    secs = 0
+    count = 1
+
+    # successful <min>-<sec> <count>
+    if re.search(r"successful", line):
+        count = get_count(line)
+        mins, secs = get_time(line)
+        status = 1
+
+    # state error <min>-<sec> <count>
+    elif re.search(r"state *error", line):
+        count = get_count(line)
+        mins, secs = get_time(line)
+        status = 2
+
+    # invalid data entry
+    else:
+        status = -1
+
+    return mins, secs, count, status
+
+
+def fill_caller_form(my_name, their_name, mins, secs, status):
     """ fill a single form and tick check boxes according to minutes """
 
     caller_form_url = "https://docs.google.com/forms/d/e/1FAIpQLSdhy_rcn6VBdUSRKbDTz5TqyGTY9NT-LE9FZbkvOb2A8-VyJw/formResponse"
@@ -107,9 +137,47 @@ def fill_form(my_name, their_name, mins, secs, status):
     else:
         result = "successful call: " + their_name
 
+    fill_form(caller_form_url, values, result)
+
+
+def fill_agent_form(my_name, mins, secs, status):
+    """ fill a single form and tick check boxes according to minutes """
+
+    agent_form_url = "https://docs.google.com/forms/d/e/1FAIpQLSdxGqR1cYpGCQp23wK6dgZwzQPlQqqaAIo61EpIfUM401i6pg/formResponse"
+
+    result = ""
+    values = {
+        # my name and id
+        "entry.46240384": my_name,
+        # call duration
+        "entry.738177074": str(mins)+"-"+str(secs),
+        # entry box 1 url_2
+        "entry.1153667312": "Passed for URL 2",
+        # entry box 1 url_1
+        "entry.1153667312": "Passed for URL 1",
+        # entry box 2
+        "entry.1362397944": "Passed",
+        # entry box 3
+        "entry.207091415": "Passed",
+        # entry box 4
+        "entry.1764449265": "Passed",
+        # entry box 5
+        "entry.929355429": "Passed",
+    }
+    if status == 1:
+        values["entry.2130452503"] = "Passed"
+        result = "successful - " + str(mins)+"m "+str(secs) + "s"
+    elif status == 2:
+        values["entry.2130452503"] = "Unable to come back into READY state"
+        result = "state error - " + str(mins)+"m "+str(secs) + "s"
+
+    fill_form(agent_form_url, values, result)
+
+
+def fill_form(form_url, values, result):
     # post request of form and check for errors
     try:
-        response = requests.post(caller_form_url, data=values, timeout=10)
+        # response = requests.post(form_url, data=values, timeout=10)
         print(result)
     except Exception as err:
         print(' ***( ERROR: ', err, ') -> ', result)
@@ -117,16 +185,37 @@ def fill_form(my_name, their_name, mins, secs, status):
 
 if __name__ == "__main__":
     my_name = "abcqwe 123456"
-    filename = open("file.txt", "r")
 
-    # for every entry in file, fill form
-    for line in filename.readlines():
-        line = line.lower().rstrip()
-        if line and not re.search(r"^ *[\#]", line):
-            line = " " + line + " "
-            their_name, mins, secs, count, status = extract_info(line)
-            if status != -1:
-                for i in range(count):
-                    fill_form(my_name, their_name, mins, secs, status)
-            else:
-                print(" *INVALID ENTRY DISCARDED -> ", line)
+    # select option (caller or agent side)
+    print("\nSelect your Option:")
+    option = input("Caller(1) / Agent(2) ").strip()
+
+    # for every entry in caller file, fill form
+    if option == "1":
+        filename = open("caller.txt", "r")
+        for line in filename.readlines():
+            line = line.lower().rstrip()
+            if line and not re.search(r"^ *[\#]", line):
+                line = " " + line + " "
+                their_name, mins, secs, count, status = extract_caller_info(
+                    line)
+                if status != -1:
+                    for i in range(count):
+                        fill_caller_form(my_name, their_name,
+                                         mins, secs, status)
+                else:
+                    print(" *INVALID ENTRY DISCARDED -> ", line)
+
+    # for every entry in agent file, fill form
+    elif option == "2":
+        filename = open("agent.txt", "r")
+        for line in filename.readlines():
+            line = line.lower().rstrip()
+            if line and not re.search(r"^ *[\#]", line):
+                line = " " + line + " "
+                mins, secs, count, status = extract_agent_info(line)
+                if status != -1:
+                    for i in range(count):
+                        fill_agent_form(my_name, mins, secs, status)
+                else:
+                    print(" *INVALID ENTRY DISCARDED -> ", line)

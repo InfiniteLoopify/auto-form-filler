@@ -1,5 +1,6 @@
 # <name> <id> <minutes>-<seconds>
 # you can skip minutes/seconds to get the default value of 1 minute
+
 # EXAMPLES:
 # James 123456 45-26
 # Edward Elric 987654 7
