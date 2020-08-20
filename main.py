@@ -137,7 +137,10 @@ def fill_caller_form(my_name, their_name, mins, secs, status):
     else:
         result = "successful call: " + their_name
 
-    fill_form(caller_form_url, values, result)
+    # repeat until successful
+    fail_status = 1
+    while fail_status:
+        fail_status = fill_form(caller_form_url, values, result)
 
 
 def fill_agent_form(my_name, mins, secs, status):
@@ -171,20 +174,29 @@ def fill_agent_form(my_name, mins, secs, status):
         values["entry.2130452503"] = "Unable to come back into READY state"
         result = "state error - " + str(mins)+"m "+str(secs) + "s"
 
-    fill_form(agent_form_url, values, result)
+    # repeat until successful
+    fail_status = 1
+    while fail_status:
+        fail_status = fill_form(agent_form_url, values, result)
 
 
 def fill_form(form_url, values, result):
     # post request of form and check for errors
+    fail_status = 0
     try:
-        response = requests.post(form_url, data=values, timeout=10)
+        response = requests.post(form_url, data=values, timeout=2)
         print(result)
+        # time.sleep(0)
+        fail_status = 0
     except Exception as err:
         print(' ***( ERROR: ', err, ') -> ', result)
+        fail_status = 1
+    return fail_status
 
 
 if __name__ == "__main__":
-    my_name = "abcqwe 123456"
+    my_name = "qwerty 123456"
+    print("Current NAME/ID: ", my_name)
 
     # select option (caller or agent side)
     print("\nSelect your Option:")
@@ -193,29 +205,35 @@ if __name__ == "__main__":
     # for every entry in caller file, fill form
     if option == "1":
         filename = open("caller.txt", "r")
-        for line in filename.readlines():
-            line = line.lower().rstrip()
-            if line and not re.search(r"^ *[\#]", line):
-                line = " " + line + " "
-                their_name, mins, secs, count, status = extract_caller_info(
-                    line)
-                if status != -1:
-                    for i in range(count):
-                        fill_caller_form(my_name, their_name,
-                                         mins, secs, status)
-                else:
-                    print(" *INVALID ENTRY DISCARDED -> ", line)
-
-    # for every entry in agent file, fill form
     elif option == "2":
         filename = open("agent.txt", "r")
-        for line in filename.readlines():
-            line = line.lower().rstrip()
-            if line and not re.search(r"^ *[\#]", line):
-                line = " " + line + " "
+    else:
+        exit(1)
+
+    # for every entry in file, fill form
+    for line in filename.readlines():
+        line = line.lower().rstrip()
+
+        # if line exists and is uncommented
+        if line and not re.search(r"^ *[\#]", line):
+            line = " " + line + " "
+
+            # extract useful info from line
+            if option == "1":
+                their_name, mins, secs, count, status = extract_caller_info(
+                    line)
+            elif option == "2":
                 mins, secs, count, status = extract_agent_info(line)
-                if status != -1:
-                    for i in range(count):
+
+            # fill form using info if valid entry
+            if status != -1:
+                for i in range(count):
+                    if option == "1":
+                        fill_caller_form(my_name, their_name,
+                                         mins, secs, status)
+                    elif option == "2":
                         fill_agent_form(my_name, mins, secs, status)
-                else:
-                    print(" *INVALID ENTRY DISCARDED -> ", line)
+
+            # discard if invalid entry
+            else:
+                print(" *INVALID ENTRY DISCARDED -> ", line)
