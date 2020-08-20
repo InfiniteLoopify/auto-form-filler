@@ -1,14 +1,23 @@
 # <name> <id> <minutes>-<seconds>
 # you can skip minutes/seconds to get the default value of 1 minute
 
+
+
+
+
 # examples:
-# James 123456 45-26
-# Edward Elric 987654 7
-# Steven Gerrard dasda eqwcdasd 452334
+James 123456 45-26
+ Edward Elric 987654 7
+   Steven Gerrard dasda eqwcdasd 452334
 432152
-silent call x423x
+silent call x4x
   silent call
-silent    call X4232x
-sIlent  caLlL x341x
-SILENT  CALL 3273x
+  da
+  4123ffq3q
+silent    call X2x
+sIlent  caLlL x
+unanswered  CALL x3x
+disconnected call x10x
+disconnected call x1x
+disconnected call xx
 

@@ -4,29 +4,14 @@ import time
 import re
 
 
-def get_agent_info(words):
-    """ convert agent info string to agent name, id, mins and secs """
-    time = words[-1]
-    mins = 1
-    secs = 0
-    name = ' '.join(words)
-    if not time.isalpha() and len(time) < 6:
-        time = time.split('-')
-        mins = int(time[0])
-        secs = int(time[1]) if len(time) > 1 else 0
-        name = ' '.join(words[0:-1])
-    return name, mins, secs
-
-
 def get_count(line):
     count = re.findall(r"x\d+", line)
     count = int(count[0][1:]) if count else 1
     return count
 
 
-def get_info(line):
+def extract_info(line):
     # words = [word.lower() for word in words]
-    line = " " + line.lower().rstrip() + " "
     name = "-"
     mins = 1
     secs = 0
@@ -55,20 +40,17 @@ def get_info(line):
         name = " ".join(name)
         agent_id = str(int(re.findall(r" +\d{6} *", line)[0]))
         name = name + " " + agent_id
-        print(name)
 
         # mins and seconds given
         if re.search(r" +\d{1,2}[\-]\d{1,2} +", line):
             time = re.findall(r" +\d{1,2}[\-]\d{1,2} +", line)[0].split('-')
             mins = int(time[0])
             secs = int(time[1])
-            print(mins, secs)
 
         # only mins given
         elif re.search(r" +\d{1,2} +", line):
             mins = int(re.findall(r" +\d{1,2} +", line)[0])
             secs = 0
-            print(mins)
 
         # time (min/sec) not given. defaults to 1 second
         else:
@@ -82,11 +64,12 @@ def get_info(line):
     return name, mins, secs, count, status
 
 
-def fill_form(my_name, their_name, mins, secs):
+def fill_form(my_name, their_name, mins, secs, status):
     """ fill a single form and tick check boxes according to minutes """
 
     caller_form_url = "https://docs.google.com/forms/d/e/1FAIpQLSdhy_rcn6VBdUSRKbDTz5TqyGTY9NT-LE9FZbkvOb2A8-VyJw/formResponse"
 
+    result = ""
     values = {
         # my name and id
         "entry.120477194": my_name,
@@ -107,14 +90,29 @@ def fill_form(my_name, their_name, mins, secs):
         # 10 min box
         "entry.1071130003": "Passed" if mins >= 10 else "Not Applicable",
     }
+    if status == 1:
+        values["entry.739539018.other_option_response"] = "silent call"
+        result = "silent call"
+    elif status == 2:
+        values["entry.931257732"] = "Unable to establish connection with the agent"
+        values["entry.6405329"] = "Not applicable"
+        values["entry.739539018"] = "Not Applicable"
+        result = "unanswered call"
+    elif status == 3:
+        values["entry.905041685"] = "Call disconnecting after ringing before reaching the announcement"
+        values["entry.931257732"] = "Unable to establish connection with the agent"
+        values["entry.6405329"] = "Not applicable"
+        values["entry.739539018"] = "Not Applicable"
+        result = "disconnected call"
+    else:
+        result = "successful call: " + their_name
 
     # post request of form and check for errors
     try:
-        response = requests.post(caller_form_url, data=values)
-        print(their_name)
-        time.sleep(1)
+        response = requests.post(caller_form_url, data=values, timeout=10)
+        print(result)
     except Exception as err:
-        print('(Error: ', err, ') -> ', their_name)
+        print(' ***( ERROR: ', err, ') -> ', result)
 
 
 if __name__ == "__main__":
@@ -123,14 +121,12 @@ if __name__ == "__main__":
 
     # for every entry in file, fill form
     for line in filename.readlines():
-        get_info(line)
-        # words = line.split()
-        # if words and words[0][0] != '#':  # if line is commented with '#'
-        #     is_valid = True if any((val.isdecimal() and len(val) == 6)
-        #                            for val in words) and any(val.isalpha()
-        #                                                      for val in words) else False
-        # if is_valid:
-        #     their_name, mins, secs = get_agent_info(words)
-        #     fill_form(my_name, their_name, mins, secs)
-        # else:
-        #     print("Invalid Entry Discarded: ", ' '.join(words))
+        line = line.lower().rstrip()
+        if line and not re.search(r"^ *[\#]", line):
+            line = " " + line + " "
+            their_name, mins, secs, count, status = extract_info(line)
+            if status != -1:
+                for i in range(count):
+                    fill_form(my_name, their_name, mins, secs, status)
+            else:
+                print(" *INVALID ENTRY DISCARDED -> ", line)
