@@ -1,6 +1,7 @@
 
 import requests
 import time
+import re
 
 
 def get_agent_info(words):
@@ -17,13 +18,68 @@ def get_agent_info(words):
     return name, mins, secs
 
 
-# def get_info(words):
-#     words = [word.lower() for word in words]
-#     print(words)
+def get_count(line):
+    count = re.findall(r"x\d+", line)
+    count = int(count[0][1:]) if count else 1
+    return count
 
-#     # is_valid = True if any((val.isdecimal() and len(val) == 6)
-#     #                        for val in words) and any(val.isalpha()
-#     #                                                  for val in words) else False
+
+def get_info(line):
+    # words = [word.lower() for word in words]
+    line = " " + line.lower().rstrip() + " "
+    name = "-"
+    mins = 1
+    secs = 0
+    status = 0
+    count = 1
+
+    # silent call x<count>
+    if re.search(r"silent *call", line):
+        count = get_count(line)
+        status = 1
+
+    # unanswered call x<count>
+    elif re.search(r"unanswered *call", line):
+        count = get_count(line)
+        status = 2
+
+    # disconnected call x<count>
+    elif re.search(r"disconnected *call", line):
+        count = get_count(line)
+        status = 3
+
+    # successful call: <Name> <6 digit id> <minutes>-<seconds>
+    elif re.search(r" +\d{6} +", line):
+        status = 0
+        name = re.findall(r"[a-z]+", line)
+        name = " ".join(name)
+        agent_id = str(int(re.findall(r" +\d{6} *", line)[0]))
+        name = name + " " + agent_id
+        print(name)
+
+        # mins and seconds given
+        if re.search(r" +\d{1,2}[\-]\d{1,2} +", line):
+            time = re.findall(r" +\d{1,2}[\-]\d{1,2} +", line)[0].split('-')
+            mins = int(time[0])
+            secs = int(time[1])
+            print(mins, secs)
+
+        # only mins given
+        elif re.search(r" +\d{1,2} +", line):
+            mins = int(re.findall(r" +\d{1,2} +", line)[0])
+            secs = 0
+            print(mins)
+
+        # time (min/sec) not given. defaults to 1 second
+        else:
+            mins = 1
+            secs = 0
+
+    # invalid data entry.
+    else:
+        status = -1
+
+    return name, mins, secs, count, status
 
 
 def fill_form(my_name, their_name, mins, secs):
@@ -67,14 +123,14 @@ if __name__ == "__main__":
 
     # for every entry in file, fill form
     for line in filename.readlines():
-        words = line.split()
-        if words and words[0][0] != '#':  # if line is commented with '#'
-            is_valid = True if any((val.isdecimal() and len(val) == 6)
-                                   for val in words) and any(val.isalpha()
-                                                             for val in words) else False
-            # get_info(words)
-            if is_valid:
-                their_name, mins, secs = get_agent_info(words)
-                fill_form(my_name, their_name, mins, secs)
-            else:
-                print("Invalid Entry Discarded: ", ' '.join(words))
+        get_info(line)
+        # words = line.split()
+        # if words and words[0][0] != '#':  # if line is commented with '#'
+        #     is_valid = True if any((val.isdecimal() and len(val) == 6)
+        #                            for val in words) and any(val.isalpha()
+        #                                                      for val in words) else False
+        # if is_valid:
+        #     their_name, mins, secs = get_agent_info(words)
+        #     fill_form(my_name, their_name, mins, secs)
+        # else:
+        #     print("Invalid Entry Discarded: ", ' '.join(words))
